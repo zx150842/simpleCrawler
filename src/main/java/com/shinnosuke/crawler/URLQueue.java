@@ -25,4 +25,8 @@ public class URLQueue {
 		urlQueue.add(url);
 	}
 	
+	public void remove(String url) {
+		urlQueue.remove(url);
+	}
+	
 }

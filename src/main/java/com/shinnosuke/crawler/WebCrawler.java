@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.shinnosuke.crawler.fetcher.Fetcher;
+import com.shinnosuke.crawler.fetcher.Page;
 
 public class WebCrawler extends Configurable implements Runnable {
 
@@ -12,14 +13,19 @@ public class WebCrawler extends Configurable implements Runnable {
 	private URLQueue urlQuene;
 	private Fetcher fetcher;
 	private boolean isShutDown;
+	private Configuration configuration;
 	private static final int assignSize = 50;
-	
-	public WebCrawler(CrawlController controller, Configuration configuration) {
-		super(configuration);
-		this.urlQuene = controller.getUrlQuene();
-		this.fetcher = new Fetcher(this.urlQuene);
+
+	public WebCrawler() {
+		
 	}
 	
+	public void init(CrawlController controller, Configuration configuration) {
+		this.urlQuene = controller.getUrlQuene();
+		this.fetcher = new Fetcher(configuration);
+		this.configuration = configuration;
+	}
+
 	@Override
 	public void run() {
 		while (!isShutDown) {
@@ -43,12 +49,17 @@ public class WebCrawler extends Configurable implements Runnable {
 			}
 			isCrawlling = true;
 			for (String url : assignUrls) {
-				fetcher.fetchPage(url);
+				Page page = fetcher.fetchPage(url);
+				if (page != null && page.getOutgoingUrls() != null
+						&& page.getOutgoingUrls().size() > 0) {
+					urlQuene.addAll(page.getOutgoingUrls());
+				}
+				urlQuene.remove(url);
 			}
 		}
-		
+
 	}
-	
+
 	public boolean isCrawlling() {
 		return isCrawlling;
 	}

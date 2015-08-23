@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.collect.Lists;
+import com.shinnosuke.crawler.exception.BusinessException;
 
 public class CrawlController {
 	
@@ -14,7 +15,7 @@ public class CrawlController {
 	private final AtomicBoolean isFinish = new AtomicBoolean(false);
 	private static final long TEN_SECONDS = 10000;
 	private final AtomicBoolean shutDown = new AtomicBoolean(false);
-	private static final int DEFAULT_CRAWLERS = 5;
+	private static final int DEFAULT_CRAWLERS = Runtime.getRuntime().availableProcessors();
 	
 	private URLQueue urlQuene;
 	private Configuration configuration;
@@ -32,16 +33,16 @@ public class CrawlController {
 		final List<Thread> threads = Lists.newArrayList();
 		final List<WebCrawler> crawlers = Lists.newArrayList();
 		for (int i = 1; i <= numberOfCrawler; ++i) {
-			T c;
+			T crawler;
 			try {
-				c = _c.newInstance();
+				crawler = _c.newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {
-				throw new RuntimeException(e);
+				throw new BusinessException(e);
 			} 
-			Thread thread = new Thread(c);
+			crawler.init(this, configuration);
+			Thread thread = new Thread(crawler);
 			thread.start();
 			threads.add(thread);
-			WebCrawler crawler = new WebCrawler(this, configuration);
 			crawlers.add(crawler);
 		}
 		
@@ -130,6 +131,14 @@ public class CrawlController {
 	
 	public URLQueue getUrlQuene() {
 		return urlQuene;
+	}
+	
+	public void addSeed(String url) {
+		urlQuene.add(url);
+	}
+	
+	public void addSeed(List<String> urls) {
+		urlQuene.addAll(urls);
 	}
 	
 }

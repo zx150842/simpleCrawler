@@ -1,18 +1,29 @@
 package com.shinnosuke.crawler.fetcher;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.shinnosuke.crawler.Configurable;
-import com.shinnosuke.crawler.URLQueue;
+import com.shinnosuke.crawler.Configuration;
+import com.shinosuke.crawler.parse.Parse;
 
 public class Fetcher extends Configurable {
 
-	private URLQueue urlQueue;
+	private static HttpPoolUtil httpPoolUtil;
+	private static ReentrantLock httpLock = new ReentrantLock();
 	
-	public Fetcher(URLQueue urlQueue) {
-		this.urlQueue = urlQueue;
+	public Fetcher(Configuration config) {
+		if (httpPoolUtil == null) {
+			httpLock.lock();
+			if (httpPoolUtil == null) {
+				httpPoolUtil = new HttpPoolUtil(config);
+			}
+			httpLock.unlock();
+		}
 	}
 	
 	public Page fetchPage(String url) {
-	
-		return null;
+		String content = httpPoolUtil.getContent(url);
+		Page page = Parse.parse(content);
+		return page;
 	}
 }
